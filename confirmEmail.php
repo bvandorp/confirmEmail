@@ -15,7 +15,7 @@ $email = $hook->getValue('email');
 $message = $hook->getValue('message');
 
 ///compose message with an array of the settings you want to have available as placeholders on the email template
-$message = $modx->getChunk($tpl,array(
+$emailHTML = $modx->getChunk($tpl,array(
 	'site_name' => $siteName,
 	'name' => $name,
 	'email' => $email,
@@ -24,7 +24,7 @@ $message = $modx->getChunk($tpl,array(
 
 //setup mail service settings
 $modx->getService('mail', 'mail.modPHPMailer');
-$modx->mail->set(modMail::MAIL_BODY,$message);
+$modx->mail->set(modMail::MAIL_BODY,$emailHTML);
 $modx->mail->set(modMail::MAIL_FROM, $mailFrom);
 $modx->mail->set(modMail::MAIL_FROM_NAME, $siteName);
 $modx->mail->set(modMail::MAIL_SUBJECT,$subject);
