@@ -2,34 +2,47 @@
 //error_reporting(E_ALL);
 //ini_set("display_errors", 1);
 
-//verzamelen gegevens
-//$voornaam = $hook->getValue('voornaam');
+//define sending settings
+$mailFrom = ''; //emailadress for the from: field
+$replyTo = ''; //replyto emailadress
+$subject = ''; //subject for email
+$tpl = 'emailConfirmTpl'; //name of chunk to use for the confirmEmail
+$siteName = $modx->getOption('site_name'); //retrieve settings from context/system settings
+
+//retrieve values from FormIt hook
+$name = $hook->getValue('name');
 $email = $hook->getValue('email');
+$message = $hook->getValue('message');
 
-//$voornaam = 'Bart';
-//$email = 'henk@raadhuis.com';
-
-//site name
-$site_name = $modx->getOption('site_name');
-
-$message = $modx->parseChunk('email_bevestiging_tpl',array(
-	'site_name' => $site_name
+///compose message with an array of the settings you want to have available as placeholders on the email template
+$message = $modx->getChunk($tpl,array(
+	'site_name' => $siteName,
+	'name' => $name,
+	'email' => $email,
+	'message' => $message
 ));
 
-//mail versturen
+//setup mail service settings
 $modx->getService('mail', 'mail.modPHPMailer');
 $modx->mail->set(modMail::MAIL_BODY,$message);
-$modx->mail->set(modMail::MAIL_FROM, $modx->getOption('reply_to'));
-$modx->mail->set(modMail::MAIL_FROM_NAME, $modx->getOption('site_name'));
-$modx->mail->set(modMail::MAIL_SUBJECT,'Bevestiging van uw sollicitatie');
+$modx->mail->set(modMail::MAIL_FROM, $mailFrom);
+$modx->mail->set(modMail::MAIL_FROM_NAME, $siteName);
+$modx->mail->set(modMail::MAIL_SUBJECT,$subject);
 $modx->mail->address('to',$email);
-$modx->mail->address('reply-to', $modx->getOption('reply_to'));
+$modx->mail->address('reply-to', $replyTo);
 $modx->mail->setHTML(true);
+
+//send mail and check for success
 if (!$modx->mail->send()) {
-$modx->log(modX::LOG_LEVEL_ERROR,'An error occurred while trying to send the email: '.$modx->mail->mailer->ErrorInfo);
+	$modx->log(modX::LOG_LEVEL_ERROR,'An error occurred while trying to send the email: '.$modx->mail->mailer->ErrorInfo); //send error to errorlog
+	$errorMsg = '';
+	//add an error to the formit error handler, error is the name of the field you want the error to show
+	$hook->addError('error',$errorMsg);
+	
+	//return flase to stop executing other hooks
+	return false;
+}else{
+	$modx->mail->reset();
+	//return true to continue other hooks
+	return true;
 }
-$modx->mail->reset();
-
-
-//return voor verder uitvoeren hooks
-return true;
